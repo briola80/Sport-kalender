@@ -2,8 +2,17 @@ import datetime
 import re
 import urllib.request
 
-# Din samlade ICS-länk från Sync2Cal
+# Din samlade ICS-länk
 ICS_URL = "http://ics.sync2cal.com/categories/get_ics/7d885003-80f8-4ee9-9b0a-6914d8fd28af.ics"
+
+# FAVORITLAG (Matcherna sparas BARA om något av dessa lag/ord finns i matchen)
+# Lämna tom list [] om du vill ha MED ALLA matcher utan filtrering.
+FAVORITES = [
+    "Frölunda", 
+    "IFK Göteborg", 
+    "Sverige", 
+    "Polen"
+]
 
 def fetch_and_fix_ics():
     req = urllib.request.Request(
@@ -22,7 +31,7 @@ def fetch_and_fix_ics():
     header = events[0]
     new_events = []
 
-    # Lista över vanliga svenska sportkanaler och tjänster
+    # Lista över svenska sportkanaler
     channels = [
         "TV4 Play", "TV4 Hockey", "TV4 Sport", "TV4 Fotboll", "TV4 Motor", "TV4",
         "Max", "HBO Max", "Viaplay", "V Sport", "SVT1", "SVT2", "SVT Play", "SVT",
@@ -51,6 +60,12 @@ def fetch_and_fix_ics():
                 if line.strip() and not line.startswith("END:VEVENT") and not line.startswith("END:VCALENDAR"):
                     other_lines.append(line)
 
+        # OM FAVORITFILTER FINNS: Kontrollera om matchen matchar dina favoriter
+        if FAVORITES:
+            is_favorite = any(re.search(r'\b' + re.escape(fav) + r'\b', f"{summary} {description}", re.IGNORECASE) for fav in FAVORITES)
+            if not is_favorite:
+                continue # Hoppa över matcher som inte är dina favoriter
+
         # Sök efter kanal i texten
         detected_channel = None
         search_text = f"{summary} {description} {current_location}"
@@ -60,7 +75,6 @@ def fetch_and_fix_ics():
                 detected_channel = ch
                 break
 
-        # Sätt Plats-fältet till den hittade kanalen
         final_location = detected_channel if detected_channel else (current_location if current_location else "Se sändningstablå")
 
         fixed_event = "BEGIN:VEVENT\n"
@@ -78,7 +92,7 @@ def fetch_and_fix_ics():
     with open("kalender.ics", "w", encoding="utf-8") as f:
         f.write(full_ics)
     
-    print("kalender.ics har skapats och kanalen har placerats i Plats-fältet!")
+    print(f"kalender.ics uppdaterad med {len(new_events)} favoritmatcher och kanaler i Plats-fältet!")
 
 if __name__ == "__main__":
     fetch_and_fix_ics()
