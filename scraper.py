@@ -2,36 +2,35 @@ import datetime
 import re
 import urllib.request
 
-# Din samlade ICS-länk
-ICS_URL = "http://ics.sync2cal.com/categories/get_ics/7d885003-80f8-4ee9-9b0a-6914d8fd28af.ics"
-
-# FAVORITLAG (Matcherna sparas BARA om något av dessa lag/ord finns i matchen)
-# Lämna tom list [] om du vill ha MED ALLA matcher utan filtrering.
-FAVORITES = [
-    "Frölunda", 
-    "IFK Göteborg", 
-    "Sverige", 
-    "Polen"
+# Alla dina tre Sync2Cal-länkar samlade i en lista
+ICS_URLS = [
+    "http://ics.sync2cal.com/categories/get_ics/6a9f72e6-9fc7-440b-9482-9e92aa1a95ba.ics",  # Sveriges landslag
+    "http://ics.sync2cal.com/categories/get_ics/457ba07a-9d3a-4653-9acd-fa832141e8a6.ics",  # Allsvenskan (fyra lag)
+    "http://ics.sync2cal.com/categories/get_ics/c0354fb4-73e4-47cb-815b-6d662eac6d64.ics"   # Frölunda
 ]
 
 def fetch_and_fix_ics():
-    req = urllib.request.Request(
-        ICS_URL, 
-        headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-    )
+    all_events = []
+    header = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Olausson Sport Calendar//SV\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\n"
     
-    try:
-        with urllib.request.urlopen(req) as response:
-            content = response.read().decode('utf-8', errors='ignore')
-    except Exception as e:
-        print(f"Kunde inte hämta ICS: {e}")
-        return
+    # Hämta och loopa igenom samtliga länkar
+    for url in ICS_URLS:
+        req = urllib.request.Request(
+            url, 
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        )
+        try:
+            with urllib.request.urlopen(req) as response:
+                content = response.read().decode('utf-8', errors='ignore')
+                events = content.split("BEGIN:VEVENT")
+                if len(events) > 1:
+                    all_events.extend(events[1:])
+        except Exception as e:
+            print(f"Kunde inte hämta länk {url}: {e}")
 
-    events = content.split("BEGIN:VEVENT")
-    header = events[0]
     new_events = []
 
-    # Lista över svenska sportkanaler
+    # Lista över svenska sportkanaler och tjänster
     channels = [
         "TV4 Play", "TV4 Hockey", "TV4 Sport", "TV4 Fotboll", "TV4 Motor", "TV4",
         "Max", "HBO Max", "Viaplay", "V Sport", "SVT1", "SVT2", "SVT Play", "SVT",
@@ -39,7 +38,7 @@ def fetch_and_fix_ics():
         "Prime Video", "Disney+"
     ]
 
-    for event_str in events[1:]:
+    for event_str in all_events:
         lines = event_str.split("\r\n")
         if len(lines) < 2:
             lines = event_str.split("\n")
@@ -60,12 +59,6 @@ def fetch_and_fix_ics():
                 if line.strip() and not line.startswith("END:VEVENT") and not line.startswith("END:VCALENDAR"):
                     other_lines.append(line)
 
-        # OM FAVORITFILTER FINNS: Kontrollera om matchen matchar dina favoriter
-        if FAVORITES:
-            is_favorite = any(re.search(r'\b' + re.escape(fav) + r'\b', f"{summary} {description}", re.IGNORECASE) for fav in FAVORITES)
-            if not is_favorite:
-                continue # Hoppa över matcher som inte är dina favoriter
-
         # Sök efter kanal i texten
         detected_channel = None
         search_text = f"{summary} {description} {current_location}"
@@ -75,6 +68,7 @@ def fetch_and_fix_ics():
                 detected_channel = ch
                 break
 
+        # Sätt Plats-fältet till den hittade kanalen
         final_location = detected_channel if detected_channel else (current_location if current_location else "Se sändningstablå")
 
         fixed_event = "BEGIN:VEVENT\n"
@@ -92,7 +86,7 @@ def fetch_and_fix_ics():
     with open("kalender.ics", "w", encoding="utf-8") as f:
         f.write(full_ics)
     
-    print(f"kalender.ics uppdaterad med {len(new_events)} favoritmatcher och kanaler i Plats-fältet!")
+    print(f"kalender.ics har skapats med {len(new_events)} matcher totalt!")
 
 if __name__ == "__main__":
     fetch_and_fix_ics()
