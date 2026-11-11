@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sport till Kalender (Kanal på Plats)</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --card-bg: #ffffff;
+            --primary: #007aff;
+            --text: #333333;
+            --border: #ccc;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 1.3rem;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:active {
+            opacity: 0.8;
+        }
+        .info {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Skapa Matchkalender</h1>
+    
+    <div class="form-group">
+        <label for="matchName">Match (Hemmalag - Bortalag)</label>
+        <input type="text" id="matchName" placeholder="t.ex. Frölunda HC - Malmö Redhawks">
+    </div>
+
+    <div class="form-group">
+        <label for="league">Liga / Turnering</label>
+        <select id="league">
+            <option value="SHL">SHL</option>
+            <option value="Allsvenskan">Allsvenskan (Fotboll)</option>
+            <option value="CHL">CHL</option>
+            <option value="Landskamp">Landskamp</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="channel">Sändande Kanal / Tjänst</label>
+        <input type="text" id="channel" placeholder="t.ex. TV4 Play, Max, Viaplay">
+    </div>
+
+    <div class="form-group">
+        <label for="matchDate">Matchdatum & Starttid</label>
+        <input type="datetime-local" id="matchDate">
+    </div>
+
+    <button onclick="generateICS()">Ladda ner kalenderfil (.ics)</button>
+    <div class="info">Öppna den nedladdade filen i din iPhone för att lägga till matchen direkt i Apple-kalendern med kanalen i Plats-fältet.</div>
+</div>
+
+<script>
+    function generateICS() {
+        const matchName = document.getElementById('matchName').value.trim();
+        const league = document.getElementById('league').value;
+        const channel = document.getElementById('channel').value.trim();
+        const matchDateInput = document.getElementById('matchDate').value;
+
+        if (!matchName || !channel || !matchDateInput) {
+            alert('Fyll i alla fält (Match, Kanal och Datum/Tid)!');
+            return;
+        }
+
+        // Konvertera datum till ICS UTC-format (YYYYMMDDTHHMMSSZ)
+        const dateObj = new Date(matchDateInput);
+        const pad = (n) => String(n).padStart(2, '0');
+        
+        const year = dateObj.getUTCFullYear();
+        const month = pad(dateObj.getUTCMonth() + 1);
+        const day = pad(dateObj.getUTCDate());
+        const hours = pad(dateObj.getUTCHours());
+        const minutes = pad(dateObj.getUTCMinutes());
+        const seconds = pad(dateObj.getUTCSeconds());
+
+        const dtstart = `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
+
+        // Anta 2.5 timmars matchtid för slutdatum
+        const endDateObj = new Date(dateObj.getTime() + 150 * 60000);
+        const endYear = endDateObj.getUTCFullYear();
+        const endMonth = pad(endDateObj.getUTCMonth() + 1);
+        const endDay = pad(endDateObj.getUTCDate());
+        const endHours = pad(endDateObj.getUTCHours());
+        const endMinutes = pad(endDateObj.getUTCMinutes());
+        const endSeconds = pad(endDateObj.getUTCSeconds());
+
+        const dtend = `${endYear}${endMonth}${endDay}T${endHours}${endMinutes}${endSeconds}Z`;
+
+        const summary = `${matchName} (${league})`;
+        const description = `Sändning via ${channel}`;
+        const location = channel; // SÄTTER KANALEN DIREKT I PLATS-FÄLTET!
+
+        // Skapa ICS-innehåll
+        const icsContent = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//Olausson Sport Calendar//SV",
+            "CALSCALE:GREGORIAN",
+            "METHOD:PUBLISH",
+            "BEGIN:VEVENT",
+            `UID:${Date.now()}@sportkalender.local`,
+            `DTSTAMP:${dtstart}`,
+            `DTSTART:${dtstart}`,
+            `DTEND:${dtend}`,
+            `SUMMARY:${summary}`,
+            `DESCRIPTION:${description}`,
+            `LOCATION:${location}`,
+            "END:VEVENT",
+            "END:VCALENDAR"
+        ].join("\r\n");
+
+        // Skapa nedladdningslänk
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${matchName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+</script>
+
+</body>
+</html>
