@@ -42,7 +42,7 @@ for m in matcher:
     cal.add_component(event)
 
 # Sparar kalenderfilen
-with open('matchkalender.ics', 'wb') as f:
+with open('kalender.ics', 'wb') as f:
     f.write(cal.to_ical())
 
 print("Matchkalender genererad automatiskt!")
