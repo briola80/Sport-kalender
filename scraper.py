@@ -4,7 +4,7 @@ import urllib.request
 
 # Webcal/ICS-länk till dina lag (Allsvenskan, SHL, CHL eller TV-tablå)
 # Ersätt länken nedan med din egen ICS-länk om du har en specifik från eCal/SHL/TVsporten!
-ICS_URL = "https://ics.ecal.com/ecal-sub/6af4b40ac2d9e20.ics"
+ICS_URL = "http://ics.sync2cal.com/categories/get_ics/7d885003-80f8-4ee9-9b0a-6914d8fd28af.ics"
 
 def fetch_and_fix_ics():
     # Hämta orginal-ICS
