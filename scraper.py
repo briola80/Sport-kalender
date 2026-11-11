@@ -6,7 +6,7 @@ import urllib.request
 ICS_URLS = [
     "http://ics.sync2cal.com/categories/get_ics/6a9f72e6-9fc7-440b-9482-9e92aa1a95ba.ics",  # Sveriges landslag
     "http://ics.sync2cal.com/categories/get_ics/457ba07a-9d3a-4653-9acd-fa832141e8a6.ics",  # Allsvenskan (fyra lag)
-    "http://ics.sync2cal.com/categories/get_ics/c0354fb4-73e4-47cb-815b-6d662eac6d64.ics"   # Frölunda
+    "http://ics.sync2cal.com/categories/get_ics/c0354fb4-73e4-47cb-815b-6d662eac6d64.ics"   # SHL - Frölunda HC
 ]
 
 def fetch_and_fix_ics():
