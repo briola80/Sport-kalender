@@ -1,36 +1,28 @@
 import icalendar
-from datetime import datetime, timedelta
+from datetime import datetime
 
-def hamta_kanal(lag, serie):
-    """Mappar automatiskt rätt sändande kanal baserat på lag och serie."""
-    if "Frölunda" in lag:
-        return "TV4 Play / C More"
-    elif "IFK Göteborg" in lag:
-        return "Max / Discovery+"
-    elif "Sverige" in lag:
-        return "SVT / Viaplay"
-    return "TV4 Play"
-
-# Lista över dina prioriterade lag och serier som skriptet genererar ifrån
-# (Du kan enkelt lägga till eller uppdatera datum/matcher här efter hand)
+# Exakta matcher med exakta klockslag, datum och specifika kanaler
 matcher = [
     {
         "hemma": "Frölunda HC",
-        "borta": "Färjestad BK",
+        "borta": "Malmö Redhawks",
         "serie": "SHL",
-        "tid": datetime.now() + timedelta(days=1)
+        "tid": datetime(2026, 11, 12, 19, 0),  # Exakt datum och tid från din bild
+        "kanal": "TV4 Play Hockey / TV12"       # Exakta kanaler
+    },
+    {
+        "hemma": "Sverige",
+        "borta": "Schweiz",
+        "serie": "Hockey-VM Dam",
+        "tid": datetime(2026, 11, 13, 19, 0),
+        "kanal": "SVT Play / SVT2"
     },
     {
         "hemma": "IFK Göteborg",
         "borta": "AIK",
         "serie": "Allsvenskan",
-        "tid": datetime.now() + timedelta(days=2)
-    },
-    {
-        "hemma": "Sverige",
-        "borta": "Tjeckien",
-        "serie": "Landskamp",
-        "tid": datetime.now() + timedelta(days=3)
+        "tid": datetime(2026, 11, 16, 15, 0),
+        "kanal": "Max / Discovery+"
     }
 ]
 
@@ -41,11 +33,10 @@ for m in matcher:
     event.add('summary', f"{m['hemma']} - {m['borta']}")
     event.add('dtstart', m['tid'])
     
-    # Sätter sändande kanal automatiskt i Plats-fältet
-    kanal = hamta_kanal(m['hemma'], m['serie'])
-    event.add('location', kanal)
+    # Sätter den exakta kanalen direkt i Plats-fältet
+    event.add('location', m['kanal'])
     
-    # Lägger till serien i beskrivningen
+    # Lägger till serie/turnering i beskrivningen
     event.add('description', f"Serie/Turnering: {m['serie']}")
     
     cal.add_component(event)
@@ -54,4 +45,4 @@ for m in matcher:
 with open('kalender.ics', 'wb') as f:
     f.write(cal.to_ical())
 
-print("Automatiskt genererad kalender för dina favoritlag är klar!")
+print("Kalender uppdaterad med korrekta tider och exakta kanaler!")
