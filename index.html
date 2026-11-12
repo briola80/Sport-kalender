@@ -154,28 +154,23 @@
 
 <div class="container">
     <h1>Sportkalender & Kanaler</h1>
-    <div class="subtitle">Filtrera efter sport/liga, markera dina favoriter och ladda ner din .ics-fil</div>
+    <div class="subtitle">Filtrera efter sport och liga, markera favoriter och ladda ner din .ics-fil</div>
 
     <!-- Sportfilter -->
     <div class="filter-section">
         <span class="filter-label">Sport</span>
         <div class="filters" id="sportFilters">
-            <button class="filter-btn active" onclick="setFilter('sport', 'all')">Alla sporter</button>
-            <button class="filter-btn" onclick="setFilter('sport', 'Fotboll')">Fotboll</button>
-            <button class="filter-btn" onclick="setFilter('sport', 'Ishockey')">Ishockey</button>
+            <button class="filter-btn active" onclick="setSportFilter('all')">Alla sporter</button>
+            <button class="filter-btn" onclick="setSportFilter('Fotboll')">Fotboll</button>
+            <button class="filter-btn" onclick="setSportFilter('Ishockey')">Ishockey</button>
         </div>
     </div>
 
-    <!-- Liga / Kategori-filter -->
+    <!-- Liga / Kategori-filter (Ändras dynamiskt baserat på sport) -->
     <div class="filter-section">
         <span class="filter-label">Liga / Turnering</span>
         <div class="filters" id="leagueFilters">
-            <button class="filter-btn active" onclick="setFilter('league', 'all')">Alla ligor</button>
-            <button class="filter-btn" onclick="setFilter('league', 'SHL')">SHL</button>
-            <button class="filter-btn" onclick="setFilter('league', 'SDHL')">SDHL</button>
-            <button class="filter-btn" onclick="setFilter('league', 'Allsvenskan')">Allsvenskan</button>
-            <button class="filter-btn" onclick="setFilter('league', 'Elitettan')">Elitettan</button>
-            <button class="filter-btn" onclick="setFilter('league', 'Landskamp')">Landskamp / VM</button>
+            <!-- Fylls i dynamiskt av JavaScript -->
         </div>
     </div>
 
@@ -194,51 +189,80 @@
 </div>
 
 <script>
-    // Komplett databas för dina lag och ligor med exakta kanaler
+    // Komplett databas med både hockey, fotboll, storligor och landslag
     const matches = [
-        // Frölunda HC (SHL)
+        // Ishockey - SHL & SDHL & Landslag
         { id: 1, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Malmö Redhawks", datetime: "2026-11-12T19:00:00", channel: "TV4 Play Hockey / TV12", selected: true },
         { id: 2, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Färjestad BK", datetime: "2026-11-19T19:00:00", channel: "TV4 Play Hockey", selected: true },
         { id: 3, sport: "Ishockey", league: "SHL", title: "Luleå HF - Frölunda HC", datetime: "2026-11-24T19:00:00", channel: "TV4 Play Hockey", selected: false },
         { id: 4, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Skellefteå AIK", datetime: "2026-11-29T15:15:00", channel: "TV4 / TV4 Play", selected: false },
-        { id: 5, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Rögle BK", datetime: "2026-12-03T19:00:00", channel: "TV4 Play Hockey", selected: false },
-        { id: 6, sport: "Ishockey", league: "SHL", title: "Växjö Lakers - Frölunda HC", datetime: "2026-12-05T18:00:00", channel: "TV4 Play Hockey", selected: false },
+        { id: 5, sport: "Ishockey", league: "SDHL", title: "Frölunda HC - Luleå HF", datetime: "2026-11-25T18:00:00", channel: "SVT Play", selected: false },
+        { id: 6, sport: "Ishockey", league: "Landskamp", title: "Sverige - Schweiz (Dam)", datetime: "2026-11-13T19:00:00", channel: "SVT Play / SVT2", selected: true },
+        { id: 7, sport: "Ishockey", league: "Landskamp", title: "Sverige - Finland (Beijer Hockey Games)", datetime: "2026-12-04T19:00:00", channel: "SVT / Viaplay", selected: false },
 
-        // Frölunda HC (SDHL - Damer)
-        { id: 7, sport: "Ishockey", league: "SDHL", title: "Frölunda HC - Luleå HF", datetime: "2026-11-25T18:00:00", channel: "SVT Play", selected: false },
-        { id: 8, sport: "Ishockey", league: "SDHL", title: "Brynäs IF - Frölunda HC", datetime: "2026-11-28T18:00:00", channel: "SVT Play", selected: false },
+        // Fotboll - Allsvenskan, Elitettan & Landskamp
+        { id: 8, sport: "Fotboll", league: "Allsvenskan", title: "Hammarby IF - IFK Göteborg", datetime: "2026-11-23T19:00:00", channel: "Max / Discovery+", selected: true },
+        { id: 9, sport: "Fotboll", league: "Allsvenskan", title: "IFK Göteborg - IK Sirius", datetime: "2026-11-29T15:00:00", channel: "Max / Discovery+", selected: false },
+        { id: 10, sport: "Fotboll", league: "Elitettan", title: "IFK Göteborg - Umeå IK", datetime: "2026-11-14T13:00:00", channel: "SVT Play", selected: true },
+        { id: 11, sport: "Fotboll", league: "Landskamp", title: "Sverige - Bosnien & Hercegovina (Herr)", datetime: "2026-11-14T20:45:00", channel: "Viaplay / TV6", selected: true },
+        { id: 12, sport: "Fotboll", league: "Landskamp", title: "Polen - Sverige (Herr)", datetime: "2026-11-17T20:45:00", channel: "Viaplay / TV6", selected: true },
 
-        // IFK Göteborg (Herr - Allsvenskan / Slutspurt & Avslutning)
-        { id: 9, sport: "Fotboll", league: "Allsvenskan", title: "Hammarby IF - IFK Göteborg", datetime: "2026-11-23T19:00:00", channel: "Max / Discovery+" },
-        { id: 10, sport: "Fotboll", league: "Allsvenskan", title: "IFK Göteborg - IK Sirius", datetime: "2026-11-29T15:00:00", channel: "Max / Discovery+" },
+        // Fotboll - Premier League
+        { id: 13, sport: "Fotboll", league: "Premier League", title: "Arsenal - Chelsea", datetime: "2026-11-22T16:00:00", channel: "Viaplay", selected: false },
+        { id: 14, sport: "Fotboll", league: "Premier League", title: "Manchester City - Liverpool", datetime: "2026-11-22T18:30:00", channel: "Viaplay", selected: false },
+        { id: 15, sport: "Fotboll", league: "Premier League", title: "Manchester United - Tottenham", datetime: "2026-11-29T17:30:00", channel: "Viaplay", selected: false },
 
-        // IFK Göteborg (Dam - Elitettan)
-        { id: 11, sport: "Fotboll", league: "Elitettan", title: "IFK Göteborg - Umeå IK", datetime: "2026-11-14T13:00:00", channel: "SVT Play", selected: true },
+        // Fotboll - La Liga
+        { id: 16, sport: "Fotboll", league: "La Liga", title: "Real Madrid - Barcelona (El Clásico)", datetime: "2026-11-23T21:00:00", channel: "TV4 Play / TV4 Sportkanalen", selected: false },
+        { id: 17, sport: "Fotboll", league: "La Liga", title: "Atletico Madrid - Valencia", datetime: "2026-11-28T18:30:00", channel: "TV4 Play", selected: false },
 
-        // Landslag (Herr & Dam - Fotboll & Hockey)
-        { id: 12, sport: "Ishockey", league: "Landskamp", title: "Sverige - Schweiz (Dam)", datetime: "2026-11-13T19:00:00", channel: "SVT Play / SVT2", selected: true },
-        { id: 13, sport: "Fotboll", league: "Landskamp", title: "Sverige - Bosnien & Hercegovina (Herr - Nations League)", datetime: "2026-11-14T20:45:00", channel: "Viaplay / TV6", selected: true },
-        { id: 14, sport: "Fotboll", league: "Landskamp", title: "Polen - Sverige (Herr - Nations League)", datetime: "2026-11-17T20:45:00", channel: "Viaplay / TV6", selected: true },
-        { id: 15, sport: "Fotboll", league: "Landskamp", title: "Sverige - Tjeckien (Herr)", datetime: "2026-11-21T19:00:00", channel: "SVT / Viaplay", selected: false },
-        { id: 16, sport: "Ishockey", league: "Landskamp", title: "Sverige - Finland (Beijer Hockey Games)", datetime: "2026-12-04T19:00:00", channel: "SVT / Viaplay", selected: false },
-        { id: 17, sport: "Fotboll", league: "Landskamp", title: "Skottland - Sverige (Dam - VM-kval)", datetime: "2026-12-01T20:25:00", channel: "SVT / Viaplay", selected: false },
-        { id: 18, sport: "Fotboll", league: "Landskamp", title: "Sverige - Skottland (Dam - VM-kval)", datetime: "2026-12-05T16:00:00", channel: "SVT / Viaplay", selected: false }
+        // Fotboll - Champions League
+        { id: 18, sport: "Fotboll", league: "Champions League", title: "Real Madrid - Liverpool", datetime: "2026-11-25T21:00:00", channel: "Viaplay / TV4 Play", selected: false },
+        { id: 19, sport: "Fotboll", league: "Champions League", title: "Bayern München - Paris Saint-Germain", datetime: "2026-11-26T21:00:00", channel: "Viaplay", selected: false }
     ];
 
     let activeSport = 'all';
     let activeLeague = 'all';
 
-    function setFilter(type, value) {
-        if (type === 'sport') {
-            activeSport = value;
-            document.querySelectorAll('#sportFilters .filter-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-        } else if (type === 'league') {
-            activeLeague = value;
-            document.querySelectorAll('#leagueFilters .filter-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-        }
+    function setSportFilter(sport) {
+        activeSport = sport;
+        activeLeague = 'all'; // Återställ liga när sport byts
+
+        document.querySelectorAll('#sportFilters .filter-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        updateLeagueButtons();
         renderMatches();
+    }
+
+    function setLeagueFilter(league) {
+        activeLeague = league;
+        document.querySelectorAll('#leagueFilters .filter-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        renderMatches();
+    }
+
+    function updateLeagueButtons() {
+        const leagueFiltersEl = document.getElementById('leagueFilters');
+        leagueFiltersEl.innerHTML = '';
+
+        // Hämta unika ligor baserat på vald sport
+        let availableLeagues = ['all'];
+        matches.forEach(m => {
+            if (activeSport === 'all' || m.sport === activeSport) {
+                if (!availableLeagues.includes(m.league)) {
+                    availableLeagues.push(m.league);
+                }
+            }
+        });
+
+        availableLeagues.forEach(league => {
+            const btn = document.createElement('button');
+            btn.className = `filter-btn ${activeLeague === league ? 'active' : ''}`;
+            btn.innerText = league === 'all' ? 'Alla ligor' : league;
+            btn.onclick = () => setLeagueFilter(league);
+            leagueFiltersEl.appendChild(btn);
+        });
     }
 
     function renderMatches() {
@@ -362,6 +386,8 @@
         window.URL.revokeObjectURL(url);
     }
 
+    // Initiera vid start
+    updateLeagueButtons();
     renderMatches();
 </script>
 
