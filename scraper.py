@@ -22,11 +22,16 @@ def bestam_kanal(sammanfattning):
     return "TV4 Play"
 
 master_cal = icalendar.Calendar()
+# Grundläggande parametrar för kalendern
+master_cal.add('prodid', '-//Sport Kalender Generator//briola80//SV')
+master_cal.add('version', '2.0')
 
-# Gå igenom alla länkarna och hämta matcherna
+headers = {'User-Agent': 'Mozilla/5.0'}
+
+ant_matcher = 0
 for url in ics_länkar:
     try:
-        response = requests.get(url)
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
             cal = icalendar.Calendar.from_ical(response.content)
             for component in cal.walk('vevent'):
@@ -37,11 +42,12 @@ for url in ics_länkar:
                 component.add('location', kanal, overwrite=True)
                 
                 master_cal.add_component(component)
+                ant_matcher += 1
     except Exception as e:
         print(f"Kunde inte hämta länk {url}: {e}")
+
+print(f"Totalt tillagda matcher: {ant_matcher}")
 
 # Spara den sammanslagna kalendern
 with open('kalender.ics', 'wb') as f:
     f.write(master_cal.to_ical())
-
-print("Alla spelscheman har hämtats, slagits ihop och uppdaterats!")
