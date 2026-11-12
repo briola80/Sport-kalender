@@ -1,14 +1,13 @@
 import icalendar
-from datetime import datetime
+from datetime import datetime, timedelta
 
-# Exakta matcher med exakta klockslag, datum och specifika kanaler
 matcher = [
     {
         "hemma": "Frölunda HC",
         "borta": "Malmö Redhawks",
         "serie": "SHL",
-        "tid": datetime(2026, 11, 12, 19, 0),  # Exakt datum och tid från din bild
-        "kanal": "TV4 Play Hockey / TV12"       # Exakta kanaler
+        "tid": datetime(2026, 11, 12, 19, 0),
+        "kanal": "TV4 Play Hockey / TV12"
     },
     {
         "hemma": "Sverige",
@@ -33,16 +32,18 @@ for m in matcher:
     event.add('summary', f"{m['hemma']} - {m['borta']}")
     event.add('dtstart', m['tid'])
     
-    # Sätter den exakta kanalen direkt i Plats-fältet
-    event.add('location', m['kanal'])
+    # Sätter sluttid automatiskt till 2 timmar efter start (eller anpassa efter sport)
+    sluttid = m['tid'] + timedelta(hours=2, minutes=15)
+    event.add('dtend', sluttid)
     
-    # Lägger till serie/turnering i beskrivningen
+    # Sätter den exakta kanalen i Plats-fältet
+    event.add('location', m['kanal'])
     event.add('description', f"Serie/Turnering: {m['serie']}")
     
     cal.add_component(event)
 
-# Sparar kalenderfilen med det exakta namnet kalender.ics
+# Sparar kalenderfilen
 with open('kalender.ics', 'wb') as f:
     f.write(cal.to_ical())
 
-print("Kalender uppdaterad med korrekta tider och exakta kanaler!")
+print("Kalender uppdaterad med både start- och sluttider!")
