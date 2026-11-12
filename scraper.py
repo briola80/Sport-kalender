@@ -1,7 +1,7 @@
 import icalendar
 import requests
+import re
 
-# 1. Endast dina viktigaste favoritlag som går direkt in i din automatiska kalender
 favorit_länkar = [
     ("Allsvenskan - IFK Göteborg Dam", "https://calendar.google.com/calendar/ical/4p80oqf0abvv671j0esisb4b04%40group.calendar.google.com/public/basic.ics"),
     ("SHL - Frölunda HC Herr", "https://ics.ecal.com/ecal-sub/6af61f2ab13970000221c64a/Swedish%20Hockey%20League.ics"),
@@ -13,7 +13,6 @@ favorit_länkar = [
 ]
 
 def bestam_kanal(sammanfattning):
-    """Mappar automatiskt rätt svensk kanal baserat på lag eller turnering."""
     namn = sammanfattning.lower()
     if "frölunda" in namn or "shl" in namn:
         return "TV4 Play Hockey"
@@ -26,6 +25,20 @@ def bestam_kanal(sammanfattning):
     elif "sverige" in namn or "tre kronor" in namn:
         return "SVT / Viaplay"
     return "TV4 Play / Viaplay"
+
+def städa_rubrik(summary_str):
+    """Tar bort skräpord, emojis (som klubbor) och ligaprefixer ur rubriken."""
+    # 1. Om händelsen är en välkomst- eller synk-notis, markera för att hoppa över
+    if any(ordet in summary_str.lower() for ordet in ["synced", "welcome"]):
+        return None
+        
+    # 2. Ta bort vanliga emojis (som 🏒, ⚽ etc.)
+    rensad = re.sub(r'[^\w\s\-\–—äöåÄÖÅa-zA-Z0-9]', '', summary_str)
+    
+    # 3. Ta bort ligaprefixer i början som "SHL | ", "SDHL | ", etc.
+    rensad = re.sub(r'^(SHL|SDHL|Allsvenskan)\s*\|\s*', '', rensad, flags=re.IGNORECASE)
+    
+    return rensad.strip()
 
 master_cal = icalendar.Calendar()
 master_cal.add('prodid', '-//Olausson Sport Kalender//SV')
@@ -46,9 +59,17 @@ for namn_kalender, url in favorit_länkar:
             
             hittade_i_denna = 0
             for component in cal.walk('vevent'):
-                summary = str(component.get('summary', ''))
-                kanal = bestam_kanal(summary)
+                original_summary = str(component.get('summary', ''))
                 
+                # Städa rubriken och hoppa över skräp (Synced/Welcome)
+                ny_summary = städa_rubrik(original_summary)
+                if not ny_summary:
+                    continue  # Hoppa över denna händelse helt!
+                
+                component['summary'] = ny_summary
+                
+                # Sätt kanal i platsfältet
+                kanal = bestam_kanal(original_summary)
                 if component.get('location'):
                     component['location'] = kanal
                 else:
@@ -57,7 +78,7 @@ for namn_kalender, url in favorit_länkar:
                 master_cal.add_component(component)
                 ant_matcher += 1
                 hittade_i_denna += 1
-            print(f"-> Lade till {hittade_i_denna} matcher från {namn_kalender}.")
+            print(f"-> Lade till {hittade_i_denna} rena matcher från {namn_kalender}.")
         else:
             print(f"-> Kunde inte hämta {namn_kalender}, status: {response.status_code}")
     except Exception as e:
@@ -65,7 +86,6 @@ for namn_kalender, url in favorit_länkar:
 
 print(f"Totalt tillagda favoritmatcher: {ant_matcher}")
 
-# Spara den rensade master-filen
 with open('kalender.ics', 'wb') as f:
     f.write(master_cal.to_ical())
-print("kalender.ics uppdaterad med endast favoriter!")
+print("kalender.ics uppdaterad och städad!")
