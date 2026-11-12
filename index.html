@@ -9,7 +9,6 @@
             --bg-color: #f8f9fa;
             --card-bg: #ffffff;
             --primary: #0056b3;
-            --primary-hover: #004085;
             --accent: #28a745;
             --text: #212529;
             --text-muted: #6c757d;
@@ -27,7 +26,7 @@
         }
         .container {
             width: 100%;
-            max-width: 600px;
+            max-width: 650px;
             background: var(--card-bg);
             padding: 20px;
             border-radius: var(--radius);
@@ -35,7 +34,7 @@
         }
         h1 {
             font-size: 1.4rem;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             text-align: center;
             color: var(--primary);
         }
@@ -43,21 +42,30 @@
             font-size: 0.85rem;
             color: var(--text-muted);
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
+        }
+        .filter-section {
+            margin-bottom: 14px;
+        }
+        .filter-label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: block;
         }
         .filters {
             display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
+            gap: 6px;
             overflow-x: auto;
             padding-bottom: 4px;
         }
         .filter-btn {
             background: #e9ecef;
             border: none;
-            padding: 8px 14px;
-            border-radius: 20px;
-            font-size: 0.85rem;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.8rem;
             cursor: pointer;
             white-space: nowrap;
             font-weight: 500;
@@ -69,16 +77,16 @@
         .match-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            max-height: 450px;
+            gap: 8px;
+            max-height: 400px;
             overflow-y: auto;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             padding-right: 4px;
         }
         .match-card {
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 12px;
+            padding: 10px 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -94,11 +102,11 @@
         }
         .match-teams {
             font-weight: bold;
-            font-size: 0.95rem;
-            margin-bottom: 3px;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
         }
         .match-meta {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
             display: flex;
             gap: 10px;
@@ -111,12 +119,12 @@
         .match-checkbox {
             transform: scale(1.2);
             cursor: pointer;
-            margin-left: 12px;
+            margin-left: 10px;
         }
         .actions {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
         button.action-btn {
             width: 100%;
@@ -125,7 +133,7 @@
             border: none;
             padding: 12px;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: bold;
             cursor: pointer;
             text-align: center;
@@ -133,13 +141,12 @@
         button.action-btn:hover {
             opacity: 0.9;
         }
-        .select-all-row {
+        .status-row {
             display: flex;
             justify-content: space-between;
             font-size: 0.85rem;
             margin-bottom: 8px;
             color: var(--text-muted);
-            cursor: pointer;
         }
     </style>
 </head>
@@ -147,54 +154,89 @@
 
 <div class="container">
     <h1>Sportkalender & Kanaler</h1>
-    <div class="subtitle">Välj dina matcher och ladda ner din skräddarsydda kalenderfil (.ics)</div>
+    <div class="subtitle">Filtrera efter sport/liga, markera dina favoriter och ladda ner din .ics-fil</div>
 
-    <!-- Filterknappar -->
-    <div class="filters">
-        <button class="filter-btn active" onclick="filterMatches('all')">Alla</button>
-        <button class="filter-btn" onclick="filterMatches('Frölunda')">Frölunda HC</button>
-        <button class="filter-btn" onclick="filterMatches('IFK Göteborg')">IFK Göteborg</button>
-        <button class="filter-btn" onclick="filterMatches('Sverige')">Landslag</button>
+    <!-- Sportfilter -->
+    <div class="filter-section">
+        <span class="filter-label">Sport</span>
+        <div class="filters" id="sportFilters">
+            <button class="filter-btn active" onclick="setFilter('sport', 'all')">Alla sporter</button>
+            <button class="filter-btn" onclick="setFilter('sport', 'Fotboll')">Fotboll</button>
+            <button class="filter-btn" onclick="setFilter('sport', 'Ishockey')">Ishockey</button>
+        </div>
     </div>
 
-    <div class="select-all-row">
-        <span onclick="toggleSelectAll()">Markera / Avmarkera alla synliga</span>
+    <!-- Liga / Kategori-filter -->
+    <div class="filter-section">
+        <span class="filter-label">Liga / Turnering</span>
+        <div class="filters" id="leagueFilters">
+            <button class="filter-btn active" onclick="setFilter('league', 'all')">Alla ligor</button>
+            <button class="filter-btn" onclick="setFilter('league', 'Allsvenskan')">Allsvenskan</button>
+            <button class="filter-btn" onclick="setFilter('league', 'SHL')">SHL</button>
+            <button class="filter-btn" onclick="setFilter('league', 'SDHL')">SDHL</button>
+            <button class="filter-btn" onclick="setFilter('league', 'Landskamp')">Landskamp</button>
+        </div>
+    </div>
+
+    <div class="status-row">
+        <span style="cursor:pointer; color:var(--primary);" onclick="toggleSelectAll()">Markera / Avmarkera alla synliga</span>
         <span id="selected-count">0 valda</span>
     </div>
 
     <!-- Matchlista -->
-    <div class="match-list" id="matchList">
-        <!-- Genereras dynamiskt via JavaScript -->
-    </div>
+    <div class="match-list" id="matchList"></div>
 
     <!-- Exportknapp -->
     <div class="actions">
-        <button class="action-btn" onclick="generateICS()">Ladda ner .ics för valda matcher</button>
+        <button class="action-btn" onclick="generateICS()">Ladda ner .ics för valda favoriter</button>
     </div>
 </div>
 
 <script>
-    // Utökad databas med fler matcher för dina favoritlag
+    // Utökad databas för all sport med tillhörande kanaler
     const matches = [
-        { id: 1, team: "Frölunda", title: "Frölunda HC - Malmö Redhawks", league: "SHL", datetime: "2026-11-12T19:00:00", channel: "TV4 Play Hockey / TV12", selected: true },
-        { id: 2, team: "Sverige", title: "Sverige - Schweiz", league: "Hockey-VM Dam", datetime: "2026-11-13T19:00:00", channel: "SVT Play / SVT2", selected: true },
-        { id: 3, team: "IFK Göteborg", title: "IFK Göteborg - AIK", league: "Allsvenskan", datetime: "2026-11-16T15:00:00", channel: "Max / Discovery+", selected: true },
-        { id: 4, team: "Frölunda", title: "Frölunda HC - Färjestad BK", league: "SHL", datetime: "2026-11-19T19:00:00", channel: "TV4 Play Hockey", selected: true },
-        { id: 5, team: "Sverige", title: "Sverige - Tjeckien", league: "Landskamp Herr", datetime: "2026-11-21T19:00:00", channel: "SVT / Viaplay", selected: true },
-        { id: 6, team: "Frölunda", title: "Luleå HF - Frölunda HC", league: "SHL", datetime: "2026-11-24T19:00:00", channel: "TV4 Play Hockey", selected: false },
-        { id: 7, team: "Frölunda", title: "Frölunda HC (Dam) - Luleå (Dam)", league: "SDHL", datetime: "2026-11-25T18:00:00", channel: "SVT Play", selected: false },
-        { id: 8, team: "IFK Göteborg", title: "IFK Göteborg - BK Häcken", league: "Allsvenskan", datetime: "2026-11-28T15:00:00", channel: "Max / Discovery+", selected: false },
-        { id: 9, team: "Frölunda", title: "Frölunda HC - Skellefteå AIK", league: "SHL", datetime: "2026-11-29T15:15:00", channel: "TV4 / TV4 Play", selected: false },
-        { id: 10, team: "Sverige", title: "Sverige - Finland", league: "Beijer Hockey Games", datetime: "2026-12-04T19:00:00", channel: "SVT / Viaplay", selected: false }
+        { id: 1, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Malmö Redhawks", datetime: "2026-11-12T19:00:00", channel: "TV4 Play Hockey / TV12", selected: true },
+        { id: 2, sport: "Ishockey", league: "Landskamp", title: "Sverige - Schweiz (Dam)", datetime: "2026-11-13T19:00:00", channel: "SVT Play / SVT2", selected: true },
+        { id: 3, sport: "Fotboll", league: "Allsvenskan", title: "IFK Göteborg - AIK", datetime: "2026-11-16T15:00:00", channel: "Max / Discovery+", selected: true },
+        { id: 4, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Färjestad BK", datetime: "2026-11-19T19:00:00", channel: "TV4 Play Hockey", selected: true },
+        { id: 5, sport: "Fotboll", league: "Landskamp", title: "Sverige - Tjeckien (Herr)", datetime: "2026-11-21T19:00:00", channel: "SVT / Viaplay", selected: true },
+        { id: 6, sport: "Ishockey", league: "SHL", title: "Luleå HF - Frölunda HC", datetime: "2026-11-24T19:00:00", channel: "TV4 Play Hockey", selected: false },
+        { id: 7, sport: "Ishockey", league: "SDHL", title: "Frölunda HC - Luleå (Dam)", datetime: "2026-11-25T18:00:00", channel: "SVT Play", selected: false },
+        { id: 8, sport: "Fotboll", league: "Allsvenskan", title: "IFK Göteborg - BK Häcken", datetime: "2026-11-28T15:00:00", channel: "Max / Discovery+", selected: false },
+        { id: 9, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Skellefteå AIK", datetime: "2026-11-29T15:15:00", channel: "TV4 / TV4 Play", selected: false },
+        { id: 10, sport: "Ishockey", league: "Landskamp", title: "Sverige - Finland (Beijer Hockey Games)", datetime: "2026-12-04T19:00:00", channel: "SVT / Viaplay", selected: false }
     ];
 
-    let currentFilter = 'all';
+    let activeSport = 'all';
+    let activeLeague = 'all';
+
+    function setFilter(type, value) {
+        if (type === 'sport') {
+            activeSport = value;
+            document.querySelectorAll('#sportFilters .filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        } else if (type === 'league') {
+            activeLeague = value;
+            document.querySelectorAll('#leagueFilters .filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        renderMatches();
+    }
 
     function renderMatches() {
         const listEl = document.getElementById('matchList');
         listEl.innerHTML = '';
 
-        const filtered = matches.filter(m => currentFilter === 'all' || m.team === currentFilter);
+        const filtered = matches.filter(m => {
+            const matchSport = (activeSport === 'all' || m.sport === activeSport);
+            const matchLeague = (activeLeague === 'all' || m.league === activeLeague);
+            return matchSport && matchLeague;
+        });
+
+        if (filtered.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; color:#6c757d; padding: 20px;">Inga matcher hittades för detta filter.</div>';
+            return;
+        }
 
         filtered.forEach(m => {
             const card = document.createElement('div');
@@ -215,6 +257,7 @@
                     <div class="match-teams">${m.title}</div>
                     <div class="match-meta">
                         <span>📅 ${dateFormatted}</span>
+                        <span>🏆 ${m.league}</span>
                         <span class="match-channel">📺 ${m.channel}</span>
                     </div>
                 </div>
@@ -226,13 +269,6 @@
         updateCount();
     }
 
-    function filterMatches(category) {
-        currentFilter = category;
-        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
-        renderMatches();
-    }
-
     function toggleMatch(id) {
         const match = matches.find(m => m.id === id);
         if(match) {
@@ -242,7 +278,9 @@
     }
 
     function toggleSelectAll() {
-        const filtered = matches.filter(m => currentFilter === 'all' || m.team === currentFilter);
+        const filtered = matches.filter(m => {
+            return (activeSport === 'all' || m.sport === activeSport) && (activeLeague === 'all' || m.league === activeLeague);
+        });
         const allSelected = filtered.every(m => m.selected);
         filtered.forEach(m => m.selected = !allSelected);
         renderMatches();
@@ -256,7 +294,7 @@
     function generateICS() {
         const selectedMatches = matches.filter(m => m.selected);
         if(selectedMatches.length === 0) {
-            alert('Välj minst en match i listan först!');
+            alert('Välj minst en match som favorit först!');
             return;
         }
 
@@ -270,7 +308,7 @@
 
         selectedMatches.forEach(m => {
             const startObj = new Date(m.datetime);
-            const endObj = new Date(startObj.getTime() + 150 * 60000); // 2.5 timmars matchtid
+            const endObj = new Date(startObj.getTime() + 150 * 60000);
 
             const formatICSDate = (d) => {
                 const pad = n => String(n).padStart(2, '0');
@@ -288,7 +326,7 @@
                 `DTEND:${dtend}`,
                 `SUMMARY:${m.title} (${m.league})`,
                 `DESCRIPTION:Sänds på ${m.channel}`,
-                `LOCATION:${m.channel}`, // Kanalen hamnar direkt i platsfältet!
+                `LOCATION:${m.channel}`,
                 "END:VEVENT"
             );
         });
@@ -306,7 +344,6 @@
         window.URL.revokeObjectURL(url);
     }
 
-    // Initiera appen
     renderMatches();
 </script>
 
