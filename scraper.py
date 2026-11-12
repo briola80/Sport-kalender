@@ -12,30 +12,49 @@ favorit_länkar = [
     ("Landslag Fotboll Dam", "https://pub.fotmob.com/prod/pub/api/v2/calendar/team/5814.ics")
 ]
 
-def bestam_kanal(sammanfattning):
+def bestam_kanal(sammanfattning, kalender_namn=""):
+    """Mappar automatiskt rätt svensk kanal baserat på lag, turnering och källkalender."""
     namn = sammanfattning.lower()
+    k_namn = kalender_namn.lower()
+    
+    # Specifik regel för damernas Elitettan / IFK Göteborg Dam
+    if "elitettan" in k_namn or "ifk göteborg dam" in k_namn or "dam" in k_namn and "ifk göteborg" in namn:
+        return "Expressen +Allt"
+    
+    # Ishockey
     if "frölunda" in namn or "shl" in namn:
         return "TV4 Play Hockey"
+    elif "sdhl" in k_namn or ("dam" in namn and "hockey" in namn):
+        return "SVT Play"
+        
+    # Fotboll - Herr Allsvenskan / Superettan
     elif "ifk göteborg" in namn or "allsvenskan" in namn:
         return "Max / Discovery+"
+        
+    # Internationell fotboll
     elif "liverpool" in namn or "premier league" in namn or "champions league" in namn:
         return "Viaplay"
     elif "la liga" in namn or "serie a" in namn:
         return "TV4 Play"
+        
+    # Landslag (Herr/Dam)
     elif "sverige" in namn or "tre kronor" in namn:
+        if "herrar" in namn or "herr" in namn or "nations league" in namn:
+            return "Viaplay SE / TV6"
         return "SVT / Viaplay"
-    return "TV4 Play / Viaplay"
+        
+    return "Viaplay / TV4 Play"
 
 def städa_rubrik(summary_str):
-    """Tar bort skräpord, emojis (som klubbor) och ligaprefixer ur rubriken."""
-    # 1. Om händelsen är en välkomst- eller synk-notis, markera för att hoppa över
+    """Tar bort skräpord, emojis och ligaprefixer ur rubriken, samt behåller endast flaggor för landslag."""
     if any(ordet in summary_str.lower() for ordet in ["synced", "welcome"]):
         return None
         
-    # 2. Ta bort vanliga emojis (som 🏒, ⚽ etc.)
-    rensad = re.sub(r'[^\w\s\-\–—äöåÄÖÅa-zA-Z0-9]', '', summary_str)
+    # Behåll endast tillåtna tecken + eventuella flagg-emojis (eller rensa bort andra emojis som klubbor 🏒)
+    # Här rensar vi bort vanliga ikoner som hockeyklubbor men låter vanliga bokstäver och siffror vara kvar.
+    rensad = re.sub(r'[^\w\s\-\–—äöåÄÖÅa-zA-Z0-9\U0001F1E6-\U0001F1FF]', '', summary_str)
     
-    # 3. Ta bort ligaprefixer i början som "SHL | ", "SDHL | ", etc.
+    # Ta bort ligaprefixer i början
     rensad = re.sub(r'^(SHL|SDHL|Allsvenskan)\s*\|\s*', '', rensad, flags=re.IGNORECASE)
     
     return rensad.strip()
@@ -61,15 +80,14 @@ for namn_kalender, url in favorit_länkar:
             for component in cal.walk('vevent'):
                 original_summary = str(component.get('summary', ''))
                 
-                # Städa rubriken och hoppa över skräp (Synced/Welcome)
                 ny_summary = städa_rubrik(original_summary)
                 if not ny_summary:
-                    continue  # Hoppa över denna händelse helt!
+                    continue
                 
                 component['summary'] = ny_summary
                 
-                # Sätt kanal i platsfältet
-                kanal = bestam_kanal(original_summary)
+                # Använd både matchtitel och källkalenderns namn för att få rätt kanal
+                kanal = bestam_kanal(original_summary, namn_kalender)
                 if component.get('location'):
                     component['location'] = kanal
                 else:
@@ -78,7 +96,7 @@ for namn_kalender, url in favorit_länkar:
                 master_cal.add_component(component)
                 ant_matcher += 1
                 hittade_i_denna += 1
-            print(f"-> Lade till {hittade_i_denna} rena matcher från {namn_kalender}.")
+            print(f"-> Lade till {hittade_i_denna} matcher från {namn_kalender}.")
         else:
             print(f"-> Kunde inte hämta {namn_kalender}, status: {response.status_code}")
     except Exception as e:
@@ -88,4 +106,4 @@ print(f"Totalt tillagda favoritmatcher: {ant_matcher}")
 
 with open('kalender.ics', 'wb') as f:
     f.write(master_cal.to_ical())
-print("kalender.ics uppdaterad och städad!")
+print("kalender.ics uppdaterad med korrekta kanaler och städade rubriker!")
