@@ -189,7 +189,6 @@
 </div>
 
 <script>
-    // Komplett databas för både favoriter och övriga storligor (Premier League, La Liga, Serie A, Champions League m.fl.)
     const matches = [
         // Ishockey - SHL & SDHL & Landslag
         { id: 1, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Malmö Redhawks", datetime: "2026-11-12T19:00:00", channel: "TV4 Play Hockey", selected: false },
@@ -355,7 +354,7 @@
 
             const formatICSDate = (d) => {
                 const pad = n => String(n).padStart(2, '0');
-                return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCFours()) || pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+                return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
             };
 
             const dtstart = formatICSDate(startObj);
@@ -376,5 +375,20 @@
 
         icsRows.push("END:VCALENDAR");
 
-        const blob = new Blob([icsRows.join("\r\n")], { type: 'text/calendar;charset=utf-8'}}] /* just fixed formatting */);
-    // (Resten av ICS-genereringen fungerar precis som tidigare)
+        const blob = new Blob([icsRows.join("\r\n")], { type: 'text/calendar;charset=utf-8' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'valda_matcher.ics';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    updateLeagueButtons();
+    renderMatches();
+</script>
+
+</body>
+</html>
