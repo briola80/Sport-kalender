@@ -160,9 +160,9 @@
     <div class="filter-section">
         <span class="filter-label">Sport</span>
         <div class="filters" id="sportFilters">
-            <button class="filter-btn active" onclick="setSportFilter('all')">Alla sporter</button>
-            <button class="filter-btn" onclick="setSportFilter('Fotboll')">Fotboll</button>
-            <button class="filter-btn" onclick="setSportFilter('Ishockey')">Ishockey</button>
+            <button class="filter-btn active" onclick="setSportFilter('all', event)">Alla sporter</button>
+            <button class="filter-btn" onclick="setSportFilter('Fotboll', event)">Fotboll</button>
+            <button class="filter-btn" onclick="setSportFilter('Ishockey', event)">Ishockey</button>
         </div>
     </div>
 
@@ -211,21 +211,25 @@
     let activeSport = 'all';
     let activeLeague = 'all';
 
-    function setSportFilter(sport) {
+    function setSportFilter(sport, event) {
         activeSport = sport;
         activeLeague = 'all';
 
         document.querySelectorAll('#sportFilters .filter-btn').forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
+        if (event && event.target) {
+            event.target.classList.add('active');
+        }
 
         updateLeagueButtons();
         renderMatches();
     }
 
-    function setLeagueFilter(league) {
+    function setLeagueFilter(league, event) {
         activeLeague = league;
         document.querySelectorAll('#leagueFilters .filter-btn').forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
+        if (event && event.target) {
+            event.target.classList.add('active');
+        }
         renderMatches();
     }
 
@@ -246,7 +250,7 @@
             const btn = document.createElement('button');
             btn.className = `filter-btn ${activeLeague === league ? 'active' : ''}`;
             btn.innerText = league === 'all' ? 'Alla ligor' : league;
-            btn.onclick = () => setLeagueFilter(league);
+            btn.onclick = (e) => setLeagueFilter(league, e);
             leagueFiltersEl.appendChild(btn);
         });
     }
@@ -255,11 +259,15 @@
         const listEl = document.getElementById('matchList');
         listEl.innerHTML = '';
 
+        // 1. Filtrera
         const filtered = matches.filter(m => {
             const matchSport = (activeSport === 'all' || m.sport === activeSport);
             const matchLeague = (activeLeague === 'all' || m.league === activeLeague);
             return matchSport && matchLeague;
         });
+
+        // 2. Sortera kronologiskt (tidigaste datum/tid först)
+        filtered.sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
 
         if (filtered.length === 0) {
             listEl.innerHTML = '<div style="text-align:center; color:#6c757d; padding: 20px;">Inga matcher hittades för detta filter.</div>';
@@ -372,6 +380,7 @@
         window.URL.revokeObjectURL(url);
     }
 
+    // Initiera vid start
     updateLeagueButtons();
     renderMatches();
 </script>
