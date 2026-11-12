@@ -70,7 +70,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            max-height: 400px;
+            max-height: 450px;
             overflow-y: auto;
             margin-bottom: 20px;
             padding-right: 4px;
@@ -102,6 +102,7 @@
             color: var(--text-muted);
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
         .match-channel {
             color: var(--primary);
@@ -173,13 +174,18 @@
 </div>
 
 <script>
-    // Exempeldatabas över matcher med exakta kanaler
+    // Utökad databas med fler matcher för dina favoritlag
     const matches = [
-        { id: 1, team: "Frölunda", title: "Frölunda HC - Malmö Redhawks", league: "SHL", datetime: "2026-11-12T19:00:00", channel: "TV4 Play Hockey / TV12" },
-        { id: 2, team: "Sverige", title: "Sverige - Schweiz", league: "Hockey-VM Dam", datetime: "2026-11-13T19:00:00", channel: "SVT Play / SVT2" },
-        { id: 3, team: "IFK Göteborg", title: "IFK Göteborg - AIK", league: "Allsvenskan", datetime: "2026-11-16T15:00:00", channel: "Max / Discovery+" },
-        { id: 4, team: "Frölunda", title: "Frölunda HC - Färjestad BK", league: "SHL", datetime: "2026-11-19T19:00:00", channel: "TV4 Play Hockey" },
-        { id: 5, team: "Sverige", title: "Sverige - Tjeckien", league: "Landskamp Herr", datetime: "2026-11-21T19:00:00", channel: "SVT / Viaplay" }
+        { id: 1, team: "Frölunda", title: "Frölunda HC - Malmö Redhawks", league: "SHL", datetime: "2026-11-12T19:00:00", channel: "TV4 Play Hockey / TV12", selected: true },
+        { id: 2, team: "Sverige", title: "Sverige - Schweiz", league: "Hockey-VM Dam", datetime: "2026-11-13T19:00:00", channel: "SVT Play / SVT2", selected: true },
+        { id: 3, team: "IFK Göteborg", title: "IFK Göteborg - AIK", league: "Allsvenskan", datetime: "2026-11-16T15:00:00", channel: "Max / Discovery+", selected: true },
+        { id: 4, team: "Frölunda", title: "Frölunda HC - Färjestad BK", league: "SHL", datetime: "2026-11-19T19:00:00", channel: "TV4 Play Hockey", selected: true },
+        { id: 5, team: "Sverige", title: "Sverige - Tjeckien", league: "Landskamp Herr", datetime: "2026-11-21T19:00:00", channel: "SVT / Viaplay", selected: true },
+        { id: 6, team: "Frölunda", title: "Luleå HF - Frölunda HC", league: "SHL", datetime: "2026-11-24T19:00:00", channel: "TV4 Play Hockey", selected: false },
+        { id: 7, team: "Frölunda", title: "Frölunda HC (Dam) - Luleå (Dam)", league: "SDHL", datetime: "2026-11-25T18:00:00", channel: "SVT Play", selected: false },
+        { id: 8, team: "IFK Göteborg", title: "IFK Göteborg - BK Häcken", league: "Allsvenskan", datetime: "2026-11-28T15:00:00", channel: "Max / Discovery+", selected: false },
+        { id: 9, team: "Frölunda", title: "Frölunda HC - Skellefteå AIK", league: "SHL", datetime: "2026-11-29T15:15:00", channel: "TV4 / TV4 Play", selected: false },
+        { id: 10, team: "Sverige", title: "Sverige - Finland", league: "Beijer Hockey Games", datetime: "2026-12-04T19:00:00", channel: "SVT / Viaplay", selected: false }
     ];
 
     let currentFilter = 'all';
@@ -264,7 +270,7 @@
 
         selectedMatches.forEach(m => {
             const startObj = new Date(m.datetime);
-            const endObj = new Date(startObj.getTime() + 150 * 60000); // 2.5 timmar matctid
+            const endObj = new Date(startObj.getTime() + 150 * 60000); // 2.5 timmars matchtid
 
             const formatICSDate = (d) => {
                 const pad = n => String(n).padStart(2, '0');
