@@ -24,17 +24,19 @@ master_cal = icalendar.Calendar()
 master_cal.add('prodid', '-//Sport Kalender Generator//briola80//SV')
 master_cal.add('version', '2.0')
 
-headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+headers = {'User-Agent': 'Mozilla/5.0'}
 ant_matcher = 0
 
 for namn_kalender, url in ics_länkar:
     try:
         print(f"Hämtar {namn_kalender}...")
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=15)
         print(f"Statuskod för {namn_kalender}: {response.status_code}")
         
         if response.status_code == 200:
-            cal = icalendar.Calendar.from_ical(response.content)
+            ics_text = response.content.decode('utf-8', errors='ignore')
+            cal = icalendar.Calendar.from_ical(ics_text)
+            
             hittade_i_denna = 0
             for component in cal.walk('vevent'):
                 summary = str(component.get('summary', ''))
@@ -51,10 +53,12 @@ for namn_kalender, url in ics_länkar:
 
 print(f"Totalt tillagda matcher i alla kalendrar: {ant_matcher}")
 
-# Spara kalendern om den innehåller matcher, annars skriv ut varning
 if ant_matcher > 0:
     with open('kalender.ics', 'wb') as f:
         f.write(master_cal.to_ical())
     print("kalender.ics sparad!")
 else:
-    print("VARNING: Inga matcher hittades alls. Sparar inte tom fil.")
+    print("VARNING: Inga matcher hittades. Skapar en grundläggande fil.")
+    with open('kalender.ics', 'wb') as f:
+        f.write(master_cal.to_ical())
+```[cite: 9]
