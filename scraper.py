@@ -7,12 +7,13 @@ def hamta_kanal(liga, hemmalag):
         "SHL": "TV4 Play",
         "CHL": "Viaplay",
         "Allsvenskan": "Max / TV4 Play",
-        "Frölunda HC": "TV4 Play"
+        "Frölunda HC": "TV4 Play",
+        "IFK Göteborg": "Max / Discovery+"
     }
-    return kanaler.get(liga, "TV4 Play")
+    # Om laget eller ligan finns i listan returneras kanalen, annars standard "TV4 Play"
+    return kanaler.get(liga, kanaler.get(hemmalag, "TV4 Play"))
 
-# Här lägger du till dina lag/matcher som skriptet ska hämta automatiskt
-# (Detta kan senare bytas ut mot ett API-anrop eller en JSON-fil)
+# Lägg till alla dina matcher/lag här
 matcher = [
     {
         "hemma": "Frölunda HC",
@@ -26,6 +27,7 @@ matcher = [
         "liga": "Allsvenskan",
         "tid": datetime(2026, 11, 16, 15, 0)
     }
+    # Du kan lägga till hur många rader som helst här nedanför på samma sätt!
 ]
 
 cal = icalendar.Calendar()
@@ -41,8 +43,8 @@ for m in matcher:
     
     cal.add_component(event)
 
-# Sparar kalenderfilen
+# Sparar kalenderfilen med det exakta namnet kalender.ics
 with open('kalender.ics', 'wb') as f:
     f.write(cal.to_ical())
 
-print("Matchkalender genererad automatiskt!")
+print("Matchkalender med uppdaterade lag genererad!")
