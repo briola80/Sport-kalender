@@ -78,7 +78,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-height: 400px;
+            max-height: 450px;
             overflow-y: auto;
             margin-bottom: 16px;
             padding-right: 4px;
@@ -171,10 +171,11 @@
         <span class="filter-label">Liga / Turnering</span>
         <div class="filters" id="leagueFilters">
             <button class="filter-btn active" onclick="setFilter('league', 'all')">Alla ligor</button>
-            <button class="filter-btn" onclick="setFilter('league', 'Allsvenskan')">Allsvenskan</button>
             <button class="filter-btn" onclick="setFilter('league', 'SHL')">SHL</button>
             <button class="filter-btn" onclick="setFilter('league', 'SDHL')">SDHL</button>
-            <button class="filter-btn" onclick="setFilter('league', 'Landskamp')">Landskamp</button>
+            <button class="filter-btn" onclick="setFilter('league', 'Allsvenskan')">Allsvenskan</button>
+            <button class="filter-btn" onclick="setFilter('league', 'Elitettan')">Elitettan</button>
+            <button class="filter-btn" onclick="setFilter('league', 'Landskamp')">Landskamp / VM</button>
         </div>
     </div>
 
@@ -193,18 +194,35 @@
 </div>
 
 <script>
-    // Utökad databas för all sport med tillhörande kanaler
+    // Komplett databas för dina lag och ligor med exakta kanaler
     const matches = [
+        // Frölunda HC (SHL)
         { id: 1, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Malmö Redhawks", datetime: "2026-11-12T19:00:00", channel: "TV4 Play Hockey / TV12", selected: true },
-        { id: 2, sport: "Ishockey", league: "Landskamp", title: "Sverige - Schweiz (Dam)", datetime: "2026-11-13T19:00:00", channel: "SVT Play / SVT2", selected: true },
-        { id: 3, sport: "Fotboll", league: "Allsvenskan", title: "IFK Göteborg - AIK", datetime: "2026-11-16T15:00:00", channel: "Max / Discovery+", selected: true },
-        { id: 4, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Färjestad BK", datetime: "2026-11-19T19:00:00", channel: "TV4 Play Hockey", selected: true },
-        { id: 5, sport: "Fotboll", league: "Landskamp", title: "Sverige - Tjeckien (Herr)", datetime: "2026-11-21T19:00:00", channel: "SVT / Viaplay", selected: true },
-        { id: 6, sport: "Ishockey", league: "SHL", title: "Luleå HF - Frölunda HC", datetime: "2026-11-24T19:00:00", channel: "TV4 Play Hockey", selected: false },
-        { id: 7, sport: "Ishockey", league: "SDHL", title: "Frölunda HC - Luleå (Dam)", datetime: "2026-11-25T18:00:00", channel: "SVT Play", selected: false },
-        { id: 8, sport: "Fotboll", league: "Allsvenskan", title: "IFK Göteborg - BK Häcken", datetime: "2026-11-28T15:00:00", channel: "Max / Discovery+", selected: false },
-        { id: 9, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Skellefteå AIK", datetime: "2026-11-29T15:15:00", channel: "TV4 / TV4 Play", selected: false },
-        { id: 10, sport: "Ishockey", league: "Landskamp", title: "Sverige - Finland (Beijer Hockey Games)", datetime: "2026-12-04T19:00:00", channel: "SVT / Viaplay", selected: false }
+        { id: 2, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Färjestad BK", datetime: "2026-11-19T19:00:00", channel: "TV4 Play Hockey", selected: true },
+        { id: 3, sport: "Ishockey", league: "SHL", title: "Luleå HF - Frölunda HC", datetime: "2026-11-24T19:00:00", channel: "TV4 Play Hockey", selected: false },
+        { id: 4, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Skellefteå AIK", datetime: "2026-11-29T15:15:00", channel: "TV4 / TV4 Play", selected: false },
+        { id: 5, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Rögle BK", datetime: "2026-12-03T19:00:00", channel: "TV4 Play Hockey", selected: false },
+        { id: 6, sport: "Ishockey", league: "SHL", title: "Växjö Lakers - Frölunda HC", datetime: "2026-12-05T18:00:00", channel: "TV4 Play Hockey", selected: false },
+
+        // Frölunda HC (SDHL - Damer)
+        { id: 7, sport: "Ishockey", league: "SDHL", title: "Frölunda HC - Luleå HF", datetime: "2026-11-25T18:00:00", channel: "SVT Play", selected: false },
+        { id: 8, sport: "Ishockey", league: "SDHL", title: "Brynäs IF - Frölunda HC", datetime: "2026-11-28T18:00:00", channel: "SVT Play", selected: false },
+
+        // IFK Göteborg (Herr - Allsvenskan / Slutspurt & Avslutning)
+        { id: 9, sport: "Fotboll", league: "Allsvenskan", title: "Hammarby IF - IFK Göteborg", datetime: "2026-11-23T19:00:00", channel: "Max / Discovery+" },
+        { id: 10, sport: "Fotboll", league: "Allsvenskan", title: "IFK Göteborg - IK Sirius", datetime: "2026-11-29T15:00:00", channel: "Max / Discovery+" },
+
+        // IFK Göteborg (Dam - Elitettan)
+        { id: 11, sport: "Fotboll", league: "Elitettan", title: "IFK Göteborg - Umeå IK", datetime: "2026-11-14T13:00:00", channel: "SVT Play", selected: true },
+
+        // Landslag (Herr & Dam - Fotboll & Hockey)
+        { id: 12, sport: "Ishockey", league: "Landskamp", title: "Sverige - Schweiz (Dam)", datetime: "2026-11-13T19:00:00", channel: "SVT Play / SVT2", selected: true },
+        { id: 13, sport: "Fotboll", league: "Landskamp", title: "Sverige - Bosnien & Hercegovina (Herr - Nations League)", datetime: "2026-11-14T20:45:00", channel: "Viaplay / TV6", selected: true },
+        { id: 14, sport: "Fotboll", league: "Landskamp", title: "Polen - Sverige (Herr - Nations League)", datetime: "2026-11-17T20:45:00", channel: "Viaplay / TV6", selected: true },
+        { id: 15, sport: "Fotboll", league: "Landskamp", title: "Sverige - Tjeckien (Herr)", datetime: "2026-11-21T19:00:00", channel: "SVT / Viaplay", selected: false },
+        { id: 16, sport: "Ishockey", league: "Landskamp", title: "Sverige - Finland (Beijer Hockey Games)", datetime: "2026-12-04T19:00:00", channel: "SVT / Viaplay", selected: false },
+        { id: 17, sport: "Fotboll", league: "Landskamp", title: "Skottland - Sverige (Dam - VM-kval)", datetime: "2026-12-01T20:25:00", channel: "SVT / Viaplay", selected: false },
+        { id: 18, sport: "Fotboll", league: "Landskamp", title: "Sverige - Skottland (Dam - VM-kval)", datetime: "2026-12-05T16:00:00", channel: "SVT / Viaplay", selected: false }
     ];
 
     let activeSport = 'all';
