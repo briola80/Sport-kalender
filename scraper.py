@@ -61,4 +61,3 @@ else:
     print("VARNING: Inga matcher hittades. Skapar en grundläggande fil.")
     with open('kalender.ics', 'wb') as f:
         f.write(master_cal.to_ical())
-```[cite: 9]
