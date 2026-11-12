@@ -41,7 +41,13 @@ for namn_kalender, url in ics_länkar:
             for component in cal.walk('vevent'):
                 summary = str(component.get('summary', ''))
                 kanal = bestam_kanal(summary)
-                component.add('location', kanal, overwrite=True)
+                
+                # Sätt platsfältet säkert utan felaktiga parametrar
+                if component.get('location'):
+                    component['location'] = kanal
+                else:
+                    component.add('location', kanal)
+                    
                 master_cal.add_component(component)
                 ant_matcher += 1
                 hittade_i_denna += 1
@@ -58,6 +64,6 @@ if ant_matcher > 0:
         f.write(master_cal.to_ical())
     print("kalender.ics sparad!")
 else:
-    print("VARNING: Inga matcher hittades. Skapar en grundläggande fil.")
+    print("VARNING: Inga matcher hittades.")
     with open('kalender.ics', 'wb') as f:
         f.write(master_cal.to_ical())
