@@ -44,17 +44,41 @@
             text-align: center;
             margin-bottom: 16px;
         }
-        .loading {
-            text-align: center;
-            padding: 30px;
+        .filter-section {
+            margin-bottom: 14px;
+        }
+        .filter-label {
+            font-size: 0.8rem;
+            font-weight: bold;
             color: var(--text-muted);
-            font-size: 0.95rem;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .filters {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .filter-btn {
+            background: #e9ecef;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
         }
         .match-list {
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-height: 500px;
+            max-height: 480px;
             overflow-y: auto;
             margin-bottom: 16px;
             padding-right: 4px;
@@ -67,6 +91,7 @@
             align-items: center;
             justify-content: space-between;
             background: #fff;
+            transition: border-color 0.2s;
         }
         .match-card.selected {
             border-color: var(--accent);
@@ -116,99 +141,132 @@
         button.action-btn:hover {
             opacity: 0.9;
         }
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>Olausson Sportkalender</h1>
-    <div class="subtitle">Hämtar samtliga matcher direkt från din GitHub-kalender</div>
+    <div class="subtitle">Välj favoriter och ladda ner din egna .ics-fil</div>
 
-    <div id="loading" class="loading">Laddar in matcher från kalendern...</div>
-    
-    <div class="match-list" id="matchList" style="display:none;"></div>
+    <!-- Sportfilter -->
+    <div class="filter-section">
+        <span class="filter-label">Sport</span>
+        <div class="filters" id="sportFilters">
+            <button class="filter-btn active" onclick="setSportFilter('all')">Alla sporter</button>
+            <button class="filter-btn" onclick="setSportFilter('Fotboll')">Fotboll</button>
+            <button class="filter-btn" onclick="setSportFilter('Ishockey')">Ishockey</button>
+        </div>
+    </div>
 
-    <div class="actions" id="actions" style="display:none;">
-        <button class="action-btn" onclick="generateICS()">Ladda ner .ics för markerade matcher</button>
+    <!-- Liga / Kategori-filter -->
+    <div class="filter-section">
+        <span class="filter-label">Liga / Turnering</span>
+        <div class="filters" id="leagueFilters">
+            <!-- Fylls i dynamiskt -->
+        </div>
+    </div>
+
+    <div class="status-row">
+        <span style="cursor:pointer; color:var(--primary);" onclick="toggleSelectAll()">Markera / Avmarkera alla synliga</span>
+        <span id="selected-count">0 valda</span>
+    </div>
+
+    <!-- Matchlista -->
+    <div class="match-list" id="matchList"></div>
+
+    <!-- Exportknapp -->
+    <div class="actions">
+        <button class="action-btn" onclick="generateICS()">Ladda ner .ics för valda matcher</button>
     </div>
 </div>
 
 <script>
-    let matches = [];
+    const matches = [
+        // Ishockey - SHL & SDHL
+        { id: 1, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Malmö Redhawks", datetime: "2026-11-12T19:00:00", channel: "TV4 Play Hockey", selected: false },
+        { id: 2, sport: "Ishockey", league: "SHL", title: "Frölunda HC - Färjestad BK", datetime: "2026-11-19T19:00:00", channel: "TV4 Play Hockey", selected: false },
+        { id: 3, sport: "Ishockey", league: "SDHL", title: "Frölunda HC - Luleå HF", datetime: "2026-11-25T18:00:00", channel: "SVT Play", selected: false },
+        { id: 4, sport: "Ishockey", league: "Landskamp", title: "Sverige - Finland (Tre Kronor)", datetime: "2026-12-04T19:00:00", channel: "SVT / Viaplay", selected: false },
 
-    // Läs in din publika master-ICS från GitHub
-    async function laddaKalender() {
-        const icsUrl = 'https://raw.githubusercontent.com/briola80/Sport-kalender/refs/heads/main/kalender.ics';
-        
-        try {
-            // Använder en öppen CORS-proxy för att kunna läsa filen direkt i webbläsaren
-            const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(icsUrl);
-            const response = await fetch(proxyUrl);
-            const text = await response.text();
-            
-            parsaICS(text);
-        } catch (e) {
-            console.error("Kunde inte ladda kalender:", e);
-            document.getElementById('loading').innerText = "Kunde inte ladda matcherna. Kontrollera din anslutning.";
-        }
+        // Fotboll - Dam & Herr
+        { id: 5, sport: "Fotboll", league: "Elitettan", title: "IFK Göteborg - Umeå IK", datetime: "2026-11-14T13:00:00", channel: "Expressen +Allt", selected: false },
+        { id: 6, sport: "Fotboll", league: "Allsvenskan", title: "Hammarby IF - IFK Göteborg", datetime: "2026-11-23T19:00:00", channel: "Max / Discovery+", selected: false },
+        { id: 7, sport: "Fotboll", league: "Premier League", title: "Manchester City - Liverpool", datetime: "2026-11-22T18:30:00", channel: "Viaplay", selected: false },
+        { id: 8, sport: "Fotboll", league: "Landskamp", title: "🇸🇪 Sverige - Bosnien & Hercegovina", datetime: "2026-11-14T20:45:00", channel: "Viaplay SE / TV6", selected: false },
+
+        // Champions League & Storligor
+        { id: 9, sport: "Fotboll", league: "Champions League", title: "Real Madrid - Liverpool", datetime: "2026-11-25T21:00:00", channel: "Viaplay / TV4 Play", selected: false },
+        { id: 10, sport: "Fotboll", league: "Premier League", title: "Arsenal - Chelsea", datetime: "2026-11-22T16:00:00", channel: "Viaplay", selected: false },
+        { id: 11, sport: "Fotboll", league: "La Liga", title: "Real Madrid - Barcelona", datetime: "2026-11-23T21:00:00", channel: "TV4 Play", selected: false }
+    ];
+
+    let activeSport = 'all';
+    let activeLeague = 'all';
+
+    function setSportFilter(sport) {
+        activeSport = sport;
+        activeLeague = 'all';
+
+        document.querySelectorAll('#sportFilters .filter-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        updateLeagueButtons();
+        renderMatches();
     }
 
-    function parsaICS(icsText) {
-        matches = [];
-        const rader = icsText.split(/\r?\n/);
-        let aktuellHändelse = null;
-        let idCounter = 1;
+    function setLeagueFilter(league) {
+        activeLeague = league;
+        document.querySelectorAll('#leagueFilters .filter-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        renderMatches();
+    }
 
-        rader.forEach(rad => {
-            if (rad === 'BEGIN:VEVENT') {
-                aktuellHändelse = { id: idCounter++, selected: false };
-            } else if (rad === 'END:VEVENT' && aktuellHändelse) {
-                if (aktuellHändelse.summary && aktuellHändelse.dtstart) {
-                    matches.push(aktuellHändelse);
-                }
-                aktuellHändelse = null;
-            } else if (aktuellHändelse) {
-                if (rad.startsWith('SUMMARY:')) {
-                    aktuellHändelse.summary = rad.substring(8);
-                } else if (rad.startsWith('DTSTART')) {
-                    const datumStr = rad.split(':')[1];
-                    aktuellHändelse.dtstart = omvandlaICSDatum(datumStr);
-                } else if (rad.startsWith('LOCATION:')) {
-                    aktuellHändelse.location = rad.substring(9);
+    function updateLeagueButtons() {
+        const leagueFiltersEl = document.getElementById('leagueFilters');
+        leagueFiltersEl.innerHTML = '';
+
+        let availableLeagues = ['all'];
+        matches.forEach(m => {
+            if (activeSport === 'all' || m.sport === activeSport) {
+                if (!availableLeagues.includes(m.league)) {
+                    availableLeagues.push(m.league);
                 }
             }
         });
 
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('matchList').style.display = 'flex';
-        document.getElementById('actions').style.display = 'flex';
-        
-        renderMatches();
-    }
-
-    function omvandlaICSDatum(str) {
-        if (!str || str.length < 8) return new Date();
-        const ar = str.substring(0, 4);
-        const man = str.substring(4, 6);
-        const dag = str.substring(6, 8);
-        let tim = "00", min = "00";
-        if (str.includes('T') && str.length >= 13) {
-            tim = str.substring(9, 11);
-            min = str.substring(11, 13);
-        }
-        return new Date(`${ar}-${man}-${dag}T${tim}:${min}:00`);
+        availableLeagues.forEach(league => {
+            const btn = document.createElement('button');
+            btn.className = `filter-btn ${activeLeague === league ? 'active' : ''}`;
+            btn.innerText = league === 'all' ? 'Alla ligor' : league;
+            btn.onclick = () => setLeagueFilter(league);
+            leagueFiltersEl.appendChild(btn);
+        });
     }
 
     function renderMatches() {
         const listEl = document.getElementById('matchList');
         listEl.innerHTML = '';
 
-        if (matches.length === 0) {
-            listEl.innerHTML = '<div style="text-align:center; color:#6c757d; padding: 20px;">Inga matcher hittades.</div>';
+        const filtered = matches.filter(m => {
+            const matchSport = (activeSport === 'all' || m.sport === activeSport);
+            const matchLeague = (activeLeague === 'all' || m.league === activeLeague);
+            return matchSport && matchLeague;
+        });
+
+        if (filtered.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; color:#6c757d; padding: 20px;">Inga matcher hittades för detta filter.</div>';
             return;
         }
 
-        matches.forEach(m => {
+        filtered.forEach(m => {
             const card = document.createElement('div');
             card.className = `match-card ${m.selected ? 'selected' : ''}`;
             card.onclick = (e) => {
@@ -218,22 +276,25 @@
                 }
             };
 
-            const datumFormat = m.dtstart.toLocaleString('sv-SE', {
+            const dateFormatted = new Date(m.datetime).toLocaleString('sv-SE', {
                 month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
             });
 
             card.innerHTML = `
                 <div class="match-info">
-                    <div class="match-teams">${m.summary}</div>
+                    <div class="match-teams">${m.title}</div>
                     <div class="match-meta">
-                        <span>📅 ${datumFormat}</span>
-                        <span class="match-channel">📺 ${m.location || 'Ej angiven'}</span>
+                        <span>📅 ${dateFormatted}</span>
+                        <span>🏆 ${m.league}</span>
+                        <span class="match-channel">📺 ${m.channel}</span>
                     </div>
                 </div>
                 <input type="checkbox" class="match-checkbox" ${m.selected ? 'checked' : ''} onchange="toggleMatch(${m.id})">
             `;
             listEl.appendChild(card);
         });
+
+        updateCount();
     }
 
     function toggleMatch(id) {
@@ -244,9 +305,23 @@
         }
     }
 
+    function toggleSelectAll() {
+        const filtered = matches.filter(m => {
+            return (activeSport === 'all' || m.sport === activeSport) && (activeLeague === 'all' || m.league === activeLeague);
+        });
+        const allSelected = filtered.every(m => m.selected);
+        filtered.forEach(m => m.selected = !allSelected);
+        renderMatches();
+    }
+
+    function updateCount() {
+        const count = matches.filter(m => m.selected).length;
+        document.getElementById('selected-count').innerText = `${count} valda`;
+    }
+
     function generateICS() {
-        const valda = matches.filter(m => m.selected);
-        if(valda.length === 0) {
+        const selectedMatches = matches.filter(m => m.selected);
+        if(selectedMatches.length === 0) {
             alert('Välj minst en match först!');
             return;
         }
@@ -259,15 +334,27 @@
             "METHOD:PUBLISH"
         ];
 
-        valda.forEach(m => {
-            const startStr = m.dtstart.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        selectedMatches.forEach(m => {
+            const startObj = new Date(m.datetime);
+            const endObj = new Date(startObj.getTime() + 150 * 60000);
+
+            const formatICSDate = (d) => {
+                const pad = n => String(n).padStart(2, '0');
+                return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+            };
+
+            const dtstart = formatICSDate(startObj);
+            const dtend = formatICSDate(endObj);
+
             icsRows.push(
                 "BEGIN:VEVENT",
-                `UID:valbar-match-${m.id}-${Date.now()}@sportkalender.local`,
-                `DTSTAMP:${startStr}`,
-                `DTSTART:${startStr}`,
-                `SUMMARY:${m.summary}`,
-                `LOCATION:${m.location || ''}`,
+                `UID:sportmatch-${m.id}-${Date.now()}@sportkalender.local`,
+                `DTSTAMP:${dtstart}`,
+                `DTSTART:${dtstart}`,
+                `DTEND:${dtend}`,
+                `SUMMARY:${m.title} (${m.league})`,
+                `DESCRIPTION:Sänds på ${m.channel}`,
+                `LOCATION:${m.channel}`,
                 "END:VEVENT"
             );
         });
@@ -278,15 +365,15 @@
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'mina_valda_matcher.ics';
+        a.download = 'valda_matcher.ics';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
     }
 
-    // Starta inläsningen vid sidladdning
-    laddaKalender();
+    updateLeagueButtons();
+    renderMatches();
 </script>
 
 </body>
